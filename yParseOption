@@ -1,0 +1,53 @@
+var express = require('express'),
+	fs = require('fs'),
+	$ = require('cheerio'),
+	app = express();
+	
+	var symbol = "GOOG",
+		encoding = "utf8",
+		path = 'option'+symbol+'.html',
+		fileFormat = ".csv",
+		htmlString = loadFile(symbol),
+		parsedHTML = $.load(htmlString),
+		selector = '.yfnc_datamodoutline1 tr td tr td';
+	
+	var callback = function(err, data){
+		if (err) throw err;
+	}
+	
+	function loadFile(s){
+	//loads local file saved from yDownloadOption
+		var htmlData = fs.readFileSync(path, encoding, callback).toString();
+		if (typeof htmlData == "string"){
+			return htmlData;
+		}
+	}
+
+	function saveToFile(data){
+		fs.appendFile('parsed'+symbol+'Values'+fileFormat, data, function (err) {
+			if (err) throw err;
+		});
+	};
+	
+	function parseTable(data, selector){
+	//filter out html and save options tables as csv
+		var arr = [];
+		arr.push('\n');
+		var val = '';
+			data(selector).each(function(i, e){
+				i = i+1;
+				val = ''+$(e).text()+'';
+				if (i%8 == 0){
+					arr.push(val+'\n');
+				} else{
+					arr.push(val+';');
+				}
+			})
+			return saveToFile(arr);
+	}
+
+	function init(){
+		var pt= parseTable(parsedHTML, selector);
+	}
+	
+	init();
